@@ -1,9 +1,67 @@
 use crate::GameState;
-use crate::actions::Actions;
 use crate::loading::TextureAssets;
 use bevy::prelude::*;
 
 pub struct PlayerPlugin;
+use bevy::prelude::{ButtonInput, KeyCode, Res};
+
+pub enum GameControl {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+impl GameControl {
+    pub fn pressed(&self, keyboard_input: &Res<ButtonInput<KeyCode>>) -> bool {
+        match self {
+            GameControl::Up => {
+                keyboard_input.pressed(KeyCode::KeyW) || keyboard_input.pressed(KeyCode::ArrowUp)
+            }
+            GameControl::Down => {
+                keyboard_input.pressed(KeyCode::KeyS) || keyboard_input.pressed(KeyCode::ArrowDown)
+            }
+            GameControl::Left => {
+                keyboard_input.pressed(KeyCode::KeyA) || keyboard_input.pressed(KeyCode::ArrowLeft)
+            }
+            GameControl::Right => {
+                keyboard_input.pressed(KeyCode::KeyD) || keyboard_input.pressed(KeyCode::ArrowRight)
+            }
+        }
+    }
+}
+
+pub fn get_movement(control: GameControl, input: &Res<ButtonInput<KeyCode>>) -> f32 {
+    if control.pressed(input) { 1.0 } else { 0.0 }
+}
+
+
+#[derive(Default, Resource)]
+pub struct Actions {
+    pub player_movement: Option<Vec2>,
+}
+
+pub fn set_movement_actions(
+    mut actions: ResMut<Actions>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    player: Query<&Transform, With<Player>>,
+    camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
+) -> Result {
+    let mut player_movement = Vec2::new(
+        get_movement(GameControl::Right, &keyboard_input)
+            - get_movement(GameControl::Left, &keyboard_input),
+        get_movement(GameControl::Up, &keyboard_input)
+            - get_movement(GameControl::Down, &keyboard_input),
+    );
+
+    if player_movement != Vec2::ZERO {
+        actions.player_movement = Some(player_movement.normalize());
+    } else {
+        actions.player_movement = None;
+    }
+
+    Ok(())
+}
 
 #[derive(Component)]
 pub struct Player;
@@ -13,7 +71,8 @@ pub struct Player;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Playing), spawn_player)
-            .add_systems(Update, move_player.run_if(in_state(GameState::Playing)));
+            .add_systems(Update, (move_player,set_movement_actions).run_if(in_state(GameState::Playing)))
+            .init_resource::<Actions>();
     }
 }
 

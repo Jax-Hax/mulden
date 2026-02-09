@@ -1,0 +1,8 @@
+each map is a folder with a list of rooms, an enemy pool rs file with percentages
+each room has a collision map, texture map, and then depending on what type of room it is:
+1. puzzle, solving this yields loot, invisible maze, hpsb type dungeon puzzles
+2. trap, this could be a boss, room that locks and you need to defeat enemies, bullet hell that you need to dodge, etc
+3. 
+
+
+ghosts should be able to do stuff, could have to do a minigame to respawn (takes longer each time) with permanent damage that grows the more you die and rare upgrades that remove it
